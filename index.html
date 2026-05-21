@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏐 バレーボールクイズ道場</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #131929;
+    --surface2: #1a2236;
+    --border: #2a3a5c;
+    --accent: #f5a623;
+    --accent2: #e8521a;
+    --blue: #3b82f6;
+    --green: #22c55e;
+    --red: #ef4444;
+    --text: #e8edf5;
+    --text-dim: #8899bb;
+    --ball: #f5a623;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── 背景アニメ ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(245,166,35,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 35% at 80% 80%, rgba(59,130,246,0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  /* ── ヘッダー ── */
+  .header {
+    text-align: center;
+    padding: 32px 0 20px;
+  }
+  .ball-icon {
+    font-size: clamp(48px, 10vw, 72px);
+    display: block;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)}
+  }
+  .game-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(28px, 7vw, 52px);
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(245,166,35,0.5);
+    margin-top: 8px;
+  }
+  .game-subtitle {
+    font-size: clamp(13px, 3vw, 16px);
+    color: var(--text-dim);
+    margin-top: 4px;
+    letter-spacing: 2px;
+  }
+
+  /* ── カード ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: clamp(16px, 4vw, 28px);
+    margin-bottom: 16px;
+  }
+
+  /* ── ルール表示 ── */
+  .rules {
+    line-height: 1.9;
+    font-size: clamp(13px, 3vw, 15px);
+    color: var(--text-dim);
+  }
+  .rules h3 {
+    color: var(--text);
+    font-size: clamp(14px, 3.5vw, 17px);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .rules span.plus { color: var(--green); font-weight: 700; }
+  .rules span.minus { color: var(--red); font-weight: 700; }
+
+  /* ── ジャンル選択 ── */
+  .genre-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .genre-btn {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 10px;
+    color: var(--text);
+    cursor: pointer;
+    text-align: center;
+    font-family: inherit;
+    font-size: 13px;
+    transition: all .2s;
+  }
+  .genre-btn:hover, .genre-btn.selected {
+    border-color: var(--accent);
+    background: rgba(245,166,35,0.1);
+    color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(245,166,35,0.2);
+  }
+  .genre-btn .genre-icon { font-size: 22px; display: block; margin-bottom: 6px; }
+  .genre-btn .genre-count { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  /* ── 入力 ── */
+  .input-group { margin-bottom: 16px; }
+  .input-group label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .input-group input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .input-group input:focus { border-color: var(--accent); }
+
+  /* ── ボタン ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px 28px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    transition: all .2s;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    width: 100%;
+    font-size: clamp(14px, 3.5vw, 17px);
+    padding: 16px;
+    box-shadow: 0 4px 20px rgba(245,166,35,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(245,166,35,0.45); }
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    padding: 10px 18px;
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-portal {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    padding: 10px 18px;
+    text-decoration: none;
+  }
+  .btn-portal:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* ── クイズ画面 ── */
+  .quiz-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .q-progress {
+    font-size: 13px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .q-progress strong { color: var(--accent); font-size: 18px; }
+  .q-score {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  /* タイマー */
+  .timer-bar-wrap {
+    background: var(--surface2);
+    border-radius: 8px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .timer-bar {
+    height: 100%;
+    border-radius: 8px;
+    transition: width .5s linear, background .5s;
+    background: linear-gradient(90deg, var(--green), var(--accent));
+  }
+  .timer-display {
+    text-align: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(28px, 7vw, 42px);
+    color: var(--accent);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+  }
+  .timer-display.danger { color: var(--red); animation: pulse .5s ease-in-out infinite alternate; }
+  @keyframes pulse { from{opacity:1} to{opacity:.5} }
+
+  /* 問題タイプバッジ */
+  .q-type-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .badge-mc { background: rgba(59,130,246,0.2); color: var(--blue); border: 1px solid var(--blue); }
+  .badge-tf { background: rgba(245,166,35,0.2); color: var(--accent); border: 1px solid var(--accent); }
+
+  /* 問題文 */
+  .question-text {
+    font-size: clamp(14px, 3.5vw, 18px);
+    font-weight: 700;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  /* 選択肢 */
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+  .choice-btn {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: clamp(13px, 3vw, 15px);
+    text-align: left;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .choice-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    background: rgba(245,166,35,0.08);
+    transform: translateX(4px);
+  }
+  .choice-btn.correct { border-color: var(--green)!important; background: rgba(34,197,94,0.15)!important; color: var(--green)!important; }
+  .choice-btn.wrong   { border-color: var(--red)!important;   background: rgba(239,68,68,0.15)!important;  color: var(--red)!important; }
+  .choice-btn:disabled { cursor: default; }
+  .choice-label {
+    width: 28px; height: 28px;
+    background: var(--border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  /* ○× ボタン */
+  .tf-choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 10px;
+  }
+  .tf-btn {
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 10px;
+    cursor: pointer;
+    font-size: clamp(36px, 10vw, 56px);
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .tf-btn .tf-label { font-size: 13px; font-family: inherit; font-weight: 700; }
+  .tf-btn:hover:not(:disabled) { transform: scale(1.04); }
+  .tf-btn.tf-maru:hover:not(:disabled) { border-color: var(--green); background: rgba(34,197,94,0.1); }
+  .tf-btn.tf-batsu:hover:not(:disabled) { border-color: var(--red); background: rgba(239,68,68,0.1); }
+  .tf-btn.correct { border-color: var(--green)!important; background: rgba(34,197,94,0.15)!important; }
+  .tf-btn.wrong   { border-color: var(--red)!important;   background: rgba(239,68,68,0.15)!important; }
+  .tf-btn:disabled { cursor: default; }
+
+  /* フィードバック */
+  .feedback {
+    text-align: center;
+    font-size: clamp(14px, 3.5vw, 17px);
+    font-weight: 700;
+    padding: 12px;
+    border-radius: 10px;
+    margin-top: 14px;
+    animation: fadeIn .3s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+  .feedback.correct { background: rgba(34,197,94,0.15); color: var(--green); }
+  .feedback.wrong   { background: rgba(239,68,68,0.15);  color: var(--red); }
+
+  /* 次へボタン */
+  .next-btn {
+    width: 100%;
+    margin-top: 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .next-btn:hover { background: rgba(245,166,35,0.1); border-color: var(--accent); }
+
+  /* ── 結果画面 ── */
+  .result-big {
+    text-align: center;
+    padding: 10px 0 20px;
+  }
+  .result-emoji { font-size: 56px; display: block; }
+  .result-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(60px, 15vw, 96px);
+    color: var(--accent);
+    line-height: 1;
+    text-shadow: 0 0 40px rgba(245,166,35,0.5);
+  }
+  .result-label { color: var(--text-dim); font-size: 13px; letter-spacing: 2px; }
+  .result-breakdown {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .rb-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 8px;
+    text-align: center;
+  }
+  .rb-num { font-size: clamp(20px, 5vw, 28px); font-weight: 900; }
+  .rb-label { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  /* 間違えた問題 */
+  .mistakes-list { margin-top: 8px; }
+  .mistake-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--red);
+    border-radius: 0 12px 12px 0;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .mistake-q { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  .mistake-your { font-size: 12px; color: var(--red); margin-bottom: 4px; }
+  .mistake-ans { font-size: 13px; color: var(--green); font-weight: 700; }
+
+  /* ── ランキング ── */
+  .ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: clamp(12px, 2.8vw, 14px);
+  }
+  .ranking-table th {
+    text-align: left;
+    padding: 10px 8px;
+    color: var(--text-dim);
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ranking-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid rgba(42,58,92,0.4);
+  }
+  .ranking-table tr:first-child td { color: #ffd700; font-weight: 700; }
+  .ranking-table tr:nth-child(2) td { color: #c0c0c0; }
+  .ranking-table tr:nth-child(3) td { color: #cd7f32; }
+  .rank-medal { font-size: 16px; }
+
+  /* タブ */
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .tab-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    transition: all .2s;
+  }
+  .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* 画面切り替え */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ボタン列 */
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  .section-title {
+    font-size: clamp(14px, 3.5vw, 17px);
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+  /* ── ジャンル選択済みハイライト（強調） ── */
+  .genre-btn.selected {
+    border-color: var(--accent) !important;
+    background: rgba(245,166,35,0.15) !important;
+    color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(245,166,35,0.25), 0 4px 20px rgba(245,166,35,0.25) !important;
+    transform: translateY(-3px) scale(1.03) !important;
+  }
+
+  /* ── 確認モーダル ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.open { display: flex; animation: fadeIn .2s ease; }
+  .modal-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: clamp(20px, 5vw, 32px);
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    animation: slideUp .25s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-genre-icon { font-size: 48px; display: block; margin-bottom: 8px; }
+  .modal-genre-name {
+    font-size: clamp(18px, 5vw, 24px);
+    font-weight: 900;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .modal-genre-count { font-size: 13px; color: var(--text-dim); margin-bottom: 20px; }
+  .modal-input-group { margin-bottom: 16px; text-align: left; }
+  .modal-input-group label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
+  .modal-input-group input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .modal-input-group input:focus { border-color: var(--accent); }
+  .modal-start-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-family: inherit;
+    font-size: clamp(15px, 4vw, 18px);
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 20px rgba(245,166,35,0.35);
+    transition: all .2s;
+  }
+  .modal-start-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(245,166,35,0.5); }
+  .modal-cancel-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px;
+    transition: color .2s;
+  }
+  .modal-cancel-btn:hover { color: var(--text); }
+
+  /* ── ジャンルカードのタップヒント ── */
+  .genre-tap-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ===== TOP ===== -->
+<div id="screen-top" class="screen active">
+  <div class="header">
+    <span class="ball-icon">🏐</span>
+    <div class="game-title">VOLLEYBALL QUIZ</div>
+    <div class="game-subtitle">バレーボールクイズ道場</div>
+  </div>
+
+  <div class="card rules">
+    <h3>📋 ルール</h3>
+    制限時間：120秒 ／ 各ジャンル10問ランダム出題<br>
+    ✅ 正解 → <span class="plus">+10点</span> ＋ 時間+5秒<br>
+    ❌ 不正解 → 減点なし ＋ 時間−5秒のペナルティ<br>
+    🏆 残り時間がそのままボーナス点に加算！<br>
+    【4択】と【○×】がランダムにミックスされます
+  </div>
+
+  <div class="card">
+    <div class="section-title">🎯 ジャンルをタップして即スタート！</div>
+    <div class="genre-tap-hint">👆 カードをタップするとすぐに始められます</div>
+    <div class="genre-grid" id="genre-grid"></div>
+  </div>
+
+  <!-- 確認モーダル -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal-box">
+      <span class="modal-genre-icon" id="modal-icon"></span>
+      <div class="modal-genre-name" id="modal-name"></div>
+      <div class="modal-genre-count" id="modal-count"></div>
+      <div class="modal-input-group">
+        <label>プレーヤー名を入力</label>
+        <input type="text" id="player-name" placeholder="例：バレー太郎" maxlength="20">
+      </div>
+      <button class="modal-start-btn" onclick="startGame()">▶ スタート！</button>
+      <button class="modal-cancel-btn" onclick="closeModal()">← ジャンル選択に戻る</button>
+    </div>
+  </div>
+
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn btn-secondary" onclick="showScreen('screen-ranking')">🏆 スコアランキングを見る</button>
+    <a href="https://pecpec37-gift.github.io/portal/" class="btn btn-portal">🏠 ポータルサイトに戻る</a>
+  </div>
+</div>
+
+<!-- ===== RANKING ===== -->
+<div id="screen-ranking" class="screen">
+  <div class="header">
+    <div class="game-title" style="font-size:clamp(22px,5vw,36px)">🏆 スコアランキング</div>
+  </div>
+
+  <div class="card">
+    <div class="tabs" id="ranking-tabs"></div>
+    <div id="ranking-content"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="showScreen('screen-top')">← トップへ</button>
+  </div>
+</div>
+
+<!-- ===== QUIZ ===== -->
+<div id="screen-quiz" class="screen">
+  <div class="quiz-header">
+    <div class="q-progress">Q<strong id="q-num">1</strong> / 10</div>
+    <div class="q-score"><span id="q-score">0</span> pt</div>
+  </div>
+
+  <div class="timer-display" id="timer-display">120 秒</div>
+  <div class="timer-bar-wrap">
+    <div class="timer-bar" id="timer-bar" style="width:100%"></div>
+  </div>
+
+  <div class="card">
+    <div id="q-type-badge" class="q-type-badge badge-mc">4択</div>
+    <div class="question-text" id="q-text"></div>
+    <div id="choices-area"></div>
+    <div id="feedback-area"></div>
+    <button class="next-btn" id="next-btn" style="display:none" onclick="nextQuestion()">次の問題へ →</button>
+  </div>
+</div>
+
+<!-- ===== RESULT ===== -->
+<div id="screen-result" class="screen">
+  <div class="header">
+    <div class="game-title" style="font-size:clamp(22px,5vw,36px)">🏆 結果発表</div>
+  </div>
+
+  <div class="card result-big">
+    <span class="result-emoji" id="result-emoji">🎉</span>
+    <div class="result-score" id="result-score">0</div>
+    <div class="result-label">TOTAL SCORE</div>
+    <div class="result-breakdown">
+      <div class="rb-item">
+        <div class="rb-num" id="res-correct" style="color:var(--green)">0</div>
+        <div class="rb-label">正解数</div>
+      </div>
+      <div class="rb-item">
+        <div class="rb-num" id="res-wrong" style="color:var(--red)">0</div>
+        <div class="rb-label">不正解数</div>
+      </div>
+      <div class="rb-item">
+        <div class="rb-num" id="res-bonus" style="color:var(--accent)">+0</div>
+        <div class="rb-label">時間ボーナス</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="mistakes-card" style="display:none">
+    <div class="section-title">❌ 間違えた問題</div>
+    <div class="mistakes-list" id="mistakes-list"></div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-primary" style="max-width:200px" onclick="restartGame()">もう一度挑戦</button>
+    <button class="btn btn-secondary" onclick="showScreen('screen-top')">← トップへ</button>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+// =============================================
+//  問題データベース（全150問以上）
+// =============================================
+const QUIZ_DATA = {
+  "基本ルール": {
+    icon: "📖",
+    questions: [
+      { type:"mc", q:"バレーボールの1チームのコート上の選手数は？", choices:["5人","6人","7人","8人"], ans:1 },
+      { type:"mc", q:"バレーボールの得点制度（ラリーポイント制）で1セット先取に必要な最低点数は？", choices:["21点","23点","25点","30点"], ans:2 },
+      { type:"mc", q:"デュースになった場合、2点リードした時点で1セット取得となるが、上限は何点？", choices:["27点","28点","30点","上限なし"], ans:3 },
+      { type:"mc", q:"5セットマッチの第5セット（ファイナルセット）は何点先取？", choices:["15点","18点","20点","25点"], ans:0 },
+      { type:"tf", q:"バレーボールでは、同じ選手が連続して2回ボールに触れることができる（ブロックを除く）。", ans:false },
+      { type:"tf", q:"サービス時、サーバーはサービスゾーン内でなければサーブを打てない。", ans:true },
+      { type:"mc", q:"1チームが1回の攻撃で触れることができる最大回数は？", choices:["2回","3回","4回","5回"], ans:1 },
+      { type:"mc", q:"バレーボールのコートの長さ（縦）は？", choices:["14m","16m","18m","20m"], ans:2 },
+      { type:"mc", q:"バレーボールのコートの幅（横）は？", choices:["6m","8m","9m","10m"], ans:2 },
+      { type:"tf", q:"ネット上端の高さは、男子が2.43m、女子が2.24mである。", ans:true },
+      { type:"mc", q:"アタックラインはネットから何メートルのところに引かれているか？", choices:["2m","3m","4m","5m"], ans:1 },
+      { type:"tf", q:"リベロ選手はサービスを行うことができる。", ans:false },
+      { type:"mc", q:"1セット中に各チームが要求できるタイムアウトの回数は？", choices:["1回","2回","3回","4回"], ans:1 },
+      { type:"tf", q:"ボールがアンテナに触れた場合はアウトとなる。", ans:true },
+      { type:"mc", q:"バレーボールの試合球の周囲（円周）はおよそ何cm？", choices:["55〜57cm","63〜67cm","68〜72cm","75〜80cm"], ans:1 },
+    ]
+  },
+  "ポジション・戦術": {
+    icon: "♟️",
+    questions: [
+      { type:"mc", q:"主にセッターからトスを受けてスパイクを打つ前衛の主力アタッカーを何という？", choices:["リベロ","アウトサイドヒッター","リベロスイーパー","セッター"], ans:1 },
+      { type:"mc", q:"守備専門の選手で、異なる色のユニフォームを着用するポジションは？", choices:["セッター","リベロ","ウイングスパイカー","ミドルブロッカー"], ans:1 },
+      { type:"tf", q:"リベロはバックセンター（後衛中央）のローテーションのみで交代できる。", ans:false },
+      { type:"mc", q:"センターに位置し、クイック攻撃やブロックを担当するポジションは？", choices:["リベロ","サイドアタッカー","ミドルブロッカー","セッター"], ans:2 },
+      { type:"mc", q:"「Bクイック」とは何の攻撃？", choices:["バックアタック","ブロードの速攻","ネット際の速攻","コンビネーション攻撃"], ans:1 },
+      { type:"tf", q:"オポジット（ライトサイドスパイカー）はセッターの対角に位置する。", ans:true },
+      { type:"mc", q:"サーブレシーブを専門に受ける守備隊形を何という？", choices:["Wフォーメーション","Mフォーメーション","2-2-2システム","ダブルウェーブ"], ans:1 },
+      { type:"tf", q:"ローテーションは時計回りに行われる。", ans:false },
+      { type:"mc", q:"バックアタックを打てるのはどのゾーンの選手か？", choices:["前衛のみ","後衛のみ","全員","リベロのみ"], ans:1 },
+      { type:"mc", q:"相手のサーブレシーブが乱れたときにクイック攻撃で崩す戦術を何という？", choices:["フローターサーブ","Aクイック","カウンターアタック","トランジション攻撃"], ans:1 },
+      { type:"tf", q:"フリーボールとは相手が攻撃ではなくアンダーで返してくるボールのことをいう。", ans:true },
+      { type:"mc", q:"2人のブロッカーが揃ってブロックすることを何という？", choices:["シングルブロック","ダブルブロック","トリプルブロック","スクリーンブロック"], ans:1 },
+      { type:"mc", q:"セッターが2人いる攻撃システムを何という？", choices:["1セッターシステム","2セッターシステム","ダブルオポジット","ハイブリッド"], ans:1 },
+      { type:"tf", q:"サービスエースとは、相手がレシーブできずに直接得点になるサーブのことをいう。", ans:true },
+      { type:"mc", q:"レフトとライトの中間、センター寄りのポジションを俗に何という？", choices:["センター","ミドル","MB","ハイブリッド"], ans:2 },
+    ]
+  },
+  "技術・テクニック": {
+    icon: "🤸",
+    questions: [
+      { type:"mc", q:"ボールを腕で下から受けるレシーブの基本技術は？", choices:["アンダーハンドパス","オーバーハンドパス","スパイクレシーブ","フローターレシーブ"], ans:0 },
+      { type:"mc", q:"ボールを両手の指で上から受け・送る技術は？", choices:["アンダーパス","オーバーパス（フィンガーパス）","ダイグ","バンプ"], ans:1 },
+      { type:"tf", q:"スパイクはボールを上から打ち下ろす攻撃技術である。", ans:true },
+      { type:"mc", q:"ネット際で相手スパイクを手でふさぐ守備技術は？", choices:["ダイブ","フライング","ブロック","チャンスボール"], ans:2 },
+      { type:"mc", q:"打ち下ろしスパイクではなく、手のひらでボールを弾く軽いスパイクを何という？", choices:["フェイント","チップ","プッシュ","ドロップ"], ans:0 },
+      { type:"tf", q:"フローターサーブはボールを無回転で飛ばし、軌道が変化するサーブである。", ans:true },
+      { type:"mc", q:"強烈な回転をかけたサーブは何サーブか？", choices:["フローター","ジャンプフローター","スピンサーブ","アンダーサーブ"], ans:2 },
+      { type:"mc", q:"助走をつけてジャンプし打つサーブは？", choices:["アンダーサーブ","サイドサーブ","ジャンプサーブ","オーバーハンドサーブ"], ans:2 },
+      { type:"tf", q:"ダイビングレシーブは、主に床に飛び込んでボールを取る守備技術である。", ans:true },
+      { type:"mc", q:"相手ブロッカーの手に当てて外に弾く打法を何という？", choices:["フェイント","ライン打ち","ブロックアウト","パイプ攻撃"], ans:2 },
+      { type:"mc", q:"後衛センターからのバックアタックを俗に何という？", choices:["Aクイック","パイプ攻撃","ブロードアタック","Dクイック"], ans:1 },
+      { type:"tf", q:"スカイボール（スカイサーブ）は、高く上げて落下させる変化球サーブである。", ans:true },
+      { type:"mc", q:"ブロックした後すぐに攻撃に転じるプレーを何という？", choices:["トランジション","ブロックバック","リバウンドアタック","スイングアタック"], ans:0 },
+      { type:"mc", q:"ボールをネット越しに手のひら一本で軽く押し込む攻撃は？", choices:["フェイント","チップショット","プッシュ","ダンプ"], ans:3 },
+      { type:"tf", q:"オーバーハンドでのサーブレシーブは原則的にFIVBルールで禁止されている。", ans:false },
+    ]
+  },
+  "日本バレーボール": {
+    icon: "🇯🇵",
+    questions: [
+      { type:"mc", q:"日本バレーボールの悲願だった「東洋の魔女」が金メダルを獲得した五輪は？", choices:["ローマ1960","東京1964","メキシコ1968","ミュンヘン1972"], ans:1 },
+      { type:"tf", q:"東洋の魔女は、大松博文監督率いる日紡貝塚バレーボール部が中心だった。", ans:true },
+      { type:"mc", q:"2012年ロンドン五輪で女子バレー日本代表が28年ぶりのメダルを獲得した順位は？", choices:["金","銀","銅","4位"], ans:2 },
+      { type:"mc", q:"2021年東京五輪で男子バレーボール日本代表の監督を務めた人物は？", choices:["中垣内祐一","植田辰哉","南部正司","眞鍋政義"], ans:0 },
+      { type:"tf", q:"眞鍋政義監督は女子日本代表を率いてロンドン五輪銅メダルを獲得した。", ans:true },
+      { type:"mc", q:"Vリーグの男子チームの最多優勝数を誇る常勝チームは（2023年時点）？", choices:["パナソニックパンサーズ","堺ブレイザーズ","サントリーサンバーズ","JTサンダーズ"], ans:0 },
+      { type:"mc", q:"日本女子バレーボール史上初の世界一となった1962年世界選手権の開催国は？", choices:["日本","ブラジル","ソ連","ポーランド"], ans:0 },
+      { type:"tf", q:"石川祐希は男子バレーボール日本代表のエースアタッカーである。", ans:true },
+      { type:"mc", q:"2023年バレーボール男子ワールドカップで日本代表が32年ぶりに突破した壁は？", choices:["決勝進出","五輪出場権獲得","世界ランク3位","準決勝進出"], ans:1 },
+      { type:"mc", q:"日本のバレーボールを統括する組織は？", choices:["JVA","JBA","JFA","JVBA"], ans:0 },
+      { type:"tf", q:"西田有志は男子バレーボール日本代表のサーブ力で知られるアタッカーである。", ans:true },
+      { type:"mc", q:"日本女子バレーボール界で「火の鳥NIPPON」の愛称がついているのは何代表？", choices:["高校日本代表","U20日本代表","成人日本代表（シニア）","ジュニア日本代表"], ans:2 },
+      { type:"tf", q:"古賀紗理那は日本女子バレーの主力アウトサイドヒッターである。", ans:true },
+      { type:"mc", q:"高橋藍が所属したイタリアのバレーボールリーグを何というか？", choices:["スーパーリーガ","スーパーレガ","ブンデスリーガ","リーグ・ナシオナル"], ans:1 },
+      { type:"tf", q:"福岡市にはVリーガー「ウルフドッグス名古屋」のホームアリーナがある。", ans:false },
+    ]
+  },
+  "世界のバレーボール": {
+    icon: "🌍",
+    questions: [
+      { type:"mc", q:"バレーボールの国際統括団体の略称は？", choices:["FIFA","FIVB","IAAF","IHF"], ans:1 },
+      { type:"mc", q:"男子バレーボールで最多の五輪金メダルを持つ国は（2024年時点）？", choices:["ブラジル","ソ連/ロシア","アメリカ","イタリア"], ans:0 },
+      { type:"tf", q:"ブラジルは2004年アテネ五輪から2012年ロンドン五輪まで男子バレーボール3連覇を達成した。", ans:true },
+      { type:"mc", q:"バレーボールが考案されたのはどの国？", choices:["日本","ブラジル","アメリカ","イギリス"], ans:2 },
+      { type:"mc", q:"バレーボールを考案したウィリアム・G・モーガンが所属していた組織は？", choices:["FIFA","YMCA","YWCA","NBA"], ans:1 },
+      { type:"tf", q:"バレーボールが考案された年は1895年である。", ans:true },
+      { type:"mc", q:"ビーチバレーが正式五輪競技になったのはいつから？", choices:["1984年ロス","1992年バルセロナ","1996年アトランタ","2000年シドニー"], ans:2 },
+      { type:"mc", q:"ポーランドは2014年・2018年に連続して何の大会で優勝したか？", choices:["五輪","ワールドカップ","世界選手権","ネーションズリーグ"], ans:2 },
+      { type:"tf", q:"ネーションズリーグ（VNL）はワールドリーグとワールドグランプリを統合して創設された。", ans:true },
+      { type:"mc", q:"女子バレーボール界で最多の世界選手権優勝回数を持つ国は（2022年時点）？", choices:["ロシア","アメリカ","ブラジル","中国"], ans:2 },
+      { type:"tf", q:"イランはアジアのバレーボール強豪男子チームの一つである。", ans:true },
+      { type:"mc", q:"バレーボールが最初にオリンピックに採用されたのはいつ？", choices:["1952年ヘルシンキ","1956年メルボルン","1960年ローマ","1964年東京"], ans:3 },
+      { type:"mc", q:"セルビアは2016年・2022年の世界選手権で優勝した（女子）。何連続での世界一か？", choices:["2大会連続（うち1度）","2度（非連続）","3度","初優勝"], ans:1 },
+      { type:"tf", q:"2024年パリ五輪で男子バレーボールのフランス代表は金メダルを獲得した。", ans:false },
+      { type:"mc", q:"バレーボールのネーションズリーグ（VNL）は毎年何月頃開催されるか？", choices:["1〜2月","3〜4月","5〜7月","9〜11月"], ans:2 },
+    ]
+  },
+  "ビーチバレー": {
+    icon: "🏖️",
+    questions: [
+      { type:"mc", q:"ビーチバレーの1チームの人数は？", choices:["2人","3人","4人","6人"], ans:0 },
+      { type:"tf", q:"ビーチバレーのコートサイズはインドアより大きい。", ans:false },
+      { type:"mc", q:"ビーチバレーのコートのサイズは？", choices:["8×8m","16×8m","18×9m","20×10m"], ans:1 },
+      { type:"mc", q:"ビーチバレー1セットは何点先取（デュース方式）？", choices:["15点","21点","25点","30点"], ans:1 },
+      { type:"tf", q:"ビーチバレーにはリベロ制度がない。", ans:true },
+      { type:"mc", q:"ビーチバレーでタッチネット（ネットに触れる）は？", choices:["失点","セーフ（プレーに影響しない場合）","警告のみ","即失格"], ans:1 },
+      { type:"tf", q:"ビーチバレーでは2セット先取で勝利となる（3セットマッチ）。", ans:true },
+      { type:"mc", q:"ビーチバレーの第3セット（タイブレーク）は何点先取？", choices:["10点","15点","21点","25点"], ans:1 },
+      { type:"mc", q:"日本ビーチバレーの先駆者的存在で、五輪にも出場した女性選手は？", choices:["浦田聖子","楠原千秋","石井美樹","田中姿子"], ans:1 },
+      { type:"tf", q:"ビーチバレーでは、ネットアンテナはインドアと同様に使用される。", ans:true },
+      { type:"mc", q:"ビーチバレーでボールがブロック時に体に当たった後コートに落ちた場合は？", choices:["失点","有効（得点）","無効（やり直し）","反則"], ans:1 },
+      { type:"tf", q:"2024年パリ五輪のビーチバレーはエッフェル塔前で行われた。", ans:true },
+      { type:"mc", q:"インドアバレーと違い、ビーチバレーで認められていない技術は？", choices:["オーバーハンドレシーブ（スパイクレシーブ時）","フィンガーサーブ","アンダーサーブ","スパイク"], ans:0 },
+      { type:"tf", q:"ビーチバレーの試合は砂浜のコートで行われるため、アンダーシューズ（靴）の着用は禁止されている。", ans:true },
+      { type:"mc", q:"ブラジルのビーチバレー男子ペアで最多の五輪金メダリストは？", choices:["レアンドロ＆エマニュエル","リカルド＆エマニュエル","セルジオ＆リカルド","エバルド＆アラン"], ans:1 },
+    ]
+  },
+  "歴史・トリビア": {
+    icon: "📜",
+    questions: [
+      { type:"mc", q:"バレーボールが考案された1895年、当初は何と呼ばれていたか？", choices:["ボールボール","ミントネット","テニスボール","ネットボール"], ans:1 },
+      { type:"tf", q:"「バレーボール（Volleyball）」という名称は1896年に初めて使用された。", ans:true },
+      { type:"mc", q:"1964年東京五輪でバレーボールが正式種目になった際の先行競技は？", choices:["バスケットボール","ハンドボール","バドミントン","テニス"], ans:0 },
+      { type:"mc", q:"「全日本バレー女子」を1962年世界チャンピオンに導いた監督は？", choices:["大松博文","山田修司","植田辰哉","眞鍋政義"], ans:0 },
+      { type:"tf", q:"ラリーポイント制が採用されたのは1999年のルール改正からである。", ans:true },
+      { type:"mc", q:"FIVBが創設されたのは何年？", choices:["1947年","1952年","1956年","1960年"], ans:0 },
+      { type:"tf", q:"リベロ制度はFIVBが1998年に正式に導入した。", ans:true },
+      { type:"mc", q:"旧ソビエト連邦は五輪男子バレーで何度金メダルを取ったか？", choices:["1度","2度","3度","4度"], ans:2 },
+      { type:"mc", q:"2019年に日本・イタリア・ポーランド共催となった大会は？", choices:["五輪","ワールドカップ","世界選手権","ネーションズリーグ"], ans:2 },
+      { type:"tf", q:"バレーボールはバスケットボールと同じジェームズ・ネイスミスによって考案された。", ans:false },
+      { type:"mc", q:"ワールドカップバレーボールは何年ごとに開催されるか？", choices:["2年","3年","4年","5年"], ans:2 },
+      { type:"tf", q:"日本は1970年代の男子バレーボール世界選手権で2連覇を達成した。", ans:true },
+      { type:"mc", q:"サイドアウト制（旧制度）では、自チームのサーブ権がない場合は？", choices:["得点できない","2点入る","得点＋サーブ権取得","1点のみ"], ans:0 },
+      { type:"mc", q:"「東洋の魔女」の代名詞となったプレーは？", choices:["高速バックアタック","回転レシーブ","フローターサーブ","2段トス"], ans:1 },
+      { type:"tf", q:"FIVBの本部はスイスのローザンヌにある。", ans:true },
+    ]
+  },
+  "有名選手": {
+    icon: "⭐",
+    questions: [
+      { type:"mc", q:"「バレーボールの神様」と称されたブラジルの伝説的セッターは？", choices:["ジバ","マルセロ・メロ","マジコ","ベルナルド"], ans:0 },
+      { type:"tf", q:"石川祐希はイタリアのセリエAで活躍する日本人選手である。", ans:true },
+      { type:"mc", q:"ブラジル男子バレーの象徴で「レイ（王）」と呼ばれたMBは？", choices:["ジバ","アンドレ・ナセメント","マルセロ・エロイ","スルビオ"], ans:1 },
+      { type:"mc", q:"世界最高のセッターの一人とされ「マジコ（魔術師）」と呼ばれたブラジル人は？", choices:["ジバ","ブルーノ・レゼンデ","マルセロ・メロ","レアンドロ・ビッサット"], ans:1 },
+      { type:"tf", q:"イタリアのイワン・ズールーはバレーボール史上最高のアウトサイドヒッターの一人とされる。", ans:true },
+      { type:"mc", q:"2010年代のポーランド男子代表を支えたエースアタッカーは？", choices:["ウカシュ・カチマレク","ミハウ・クビアク","バルトシュ・クレク","ヴィルフレド・レオン"], ans:3 },
+      { type:"mc", q:"「女子バレーのマラドーナ」とも称されたキューバの伝説的選手は？", choices:["レグラ・トーレス","ミレイジス・ルイス","ザンドラ・イスラ","ロシリン・アクォイ"], ans:0 },
+      { type:"tf", q:"西田有志は強力なジャンプサーブを武器とする日本代表選手である。", ans:true },
+      { type:"mc", q:"ロシア（ソ連）女子バレーの伝説的エカテリーナ・ガモワのポジションは？", choices:["セッター","リベロ","ウイングスパイカー","ミドルブロッカー"], ans:2 },
+      { type:"mc", q:"2021年東京五輪でMVPに輝いた男子選手は？", choices:["ニコラ・グルビッチ","マット・アンダーソン","エアルドン・スロッテルバック","ヴィルフレド・レオン"], ans:0 },
+      { type:"tf", q:"セルビア女子バレーのティヤナ・ボシュコビッチは世界トップのアタッカーの一人である。", ans:true },
+      { type:"mc", q:"日本女子バレーの主力で「メグカナ」コンビとして知られる選手の苗字は？", choices:["木村・荒木","大山・狩野","岩坂・古賀","栗原・高橋"], ans:0 },
+      { type:"tf", q:"高橋藍は石川祐希と同世代の男子代表アタッカーである。", ans:true },
+      { type:"mc", q:"2023年のVNL男子で個人賞（ベストスパイカー）を受賞した日本選手は？", choices:["石川祐希","高橋藍","西田有志","関田誠大"], ans:2 },
+      { type:"tf", q:"古賀紗理那の兄・古賀太一郎も元バレーボール日本代表選手である。", ans:true },
+    ]
+  },
+  "用語・審判": {
+    icon: "📐",
+    questions: [
+      { type:"mc", q:"「アウト」とも呼ばれる、ボールがコート外に落ちた場合の判定は？", choices:["ファウル","フォルト","ライン外","アウトオブバウンズ（フォルト）"], ans:3 },
+      { type:"mc", q:"サーバーがサーブを打つ際にサービスゾーンを踏み越えた反則を何という？", choices:["フットフォルト","ラインフォルト","ゾーンフォルト","サービスフォルト"], ans:0 },
+      { type:"tf", q:"「フォア・ヒッツ」とは4回触れてしまう反則のことである。", ans:true },
+      { type:"mc", q:"ボールを長く持ちすぎた場合の反則は？", choices:["タッチ","ホールディング（キャッチング）","ダブルコンタクト","ネットタッチ"], ans:1 },
+      { type:"mc", q:"同時に2回触れてしまった場合の反則は？", choices:["フォアヒッツ","ホールディング","ダブルコンタクト","オーバーネット"], ans:2 },
+      { type:"tf", q:"「オーバーネット」とは、ネットを越えて相手コートでボールに触れる反則である。", ans:true },
+      { type:"mc", q:"アタックしたボールがネットのアンテナ内を通過しなかった場合の判定は？", choices:["セーフ","フォルト","要確認","試合継続"], ans:1 },
+      { type:"mc", q:"バレーボールの主審は試合中どこに立つか？", choices:["コート中央","ネット横の審判台上","ラインの外","観客席近く"], ans:1 },
+      { type:"tf", q:"線審（ラインジャッジ）はボールのイン・アウトを判定する担当者である。", ans:true },
+      { type:"mc", q:"ブロックが成功して自コートに落ちた場合の得点は？", choices:["相手チームの得点","自チームの得点","無効","やり直し"], ans:1 },
+      { type:"tf", q:"サーブ時にボールをトスし、打たなかった場合は反則となる。", ans:true },
+      { type:"mc", q:"「ライン上」に落ちたボールの判定は？", choices:["アウト","イン","審判の判断による","やり直し"], ans:1 },
+      { type:"mc", q:"後衛選手がアタックラインより前でオーバーネットの高さでスパイクを打った場合は？", choices:["有効","ポジションフォルト","バックロウアタックフォルト","ネットタッチ"], ans:2 },
+      { type:"tf", q:"試合開始時のジャンケン（コイントス）で勝った側はサーブかコートかを選べる。", ans:true },
+      { type:"mc", q:"ブロックタッチ後、同じ選手が続けてボールに触れた場合は？", choices:["有効","フォア・ヒッツ","ダブルコンタクト","ホールディング"], ans:0 },
+    ]
+  },
+  "コートと設備": {
+    icon: "🏟️",
+    questions: [
+      { type:"mc", q:"バレーボールのコートとフリーゾーンを合わせた国際試合での最低スペース（横）は？", choices:["12m","14m","16m","18m"], ans:1 },
+      { type:"tf", q:"ネットの高さは、年齢・性別カテゴリーによって異なる場合がある。", ans:true },
+      { type:"mc", q:"ネットの幅（厚み）はおよそ何cm？", choices:["5cm","10cm","15cm","20cm"], ans:1 },
+      { type:"mc", q:"アンテナはネットの端から何cm内側に取り付けられるか？", choices:["ネット端（0cm）","5cm内側","10cm内側","20cm内側"], ans:0 },
+      { type:"tf", q:"コートのフロアはウッドフロアまたは合成素材が推奨されており、コンクリートは国際試合では不可。", ans:true },
+      { type:"mc", q:"ボールの色は国際試合でどのようなものが認められているか？", choices:["白のみ","白か黄","青・黄・白のパネル組み合わせが一般的","何色でも可"], ans:2 },
+      { type:"mc", q:"バレーボールのネットの高さ（男子）を基準にしたとき、一番近いのは？", choices:["2.13m","2.24m","2.43m","2.55m"], ans:2 },
+      { type:"tf", q:"女子バレーボールのネット高さは2.24mである。", ans:true },
+      { type:"mc", q:"アタックラインはネットから3mに引かれているが、後衛選手はそのラインを越えて攻撃できない（スパイクの場合）高さはどこから？", choices:["膝の高さ","腰の高さ","ネットの上端の高さ以上","肩の高さ"], ans:2 },
+      { type:"mc", q:"バレーボールのサービスゾーンの幅はどのくらい？", choices:["コートの幅（9m）全体","左右の半分ずつ","エンドラインの延長線上9m全体","3m幅のみ"], ans:2 },
+      { type:"tf", q:"ビーチバレーのコートには砂の深さの規定がある。", ans:true },
+      { type:"mc", q:"屋内バレーボールコートの天井高さは国際試合で最低何メートルが必要か？", choices:["5m","7m","9m","12m"], ans:2 },
+      { type:"tf", q:"コートのセンターラインはネット直下に引かれている。", ans:true },
+      { type:"mc", q:"バレーボールの公式試合球の気圧はおよそ？", choices:["0.100〜0.200kg/cm²","0.300〜0.325kg/cm²","0.500〜0.600kg/cm²","1.000kg/cm²以上"], ans:1 },
+      { type:"tf", q:"ネットのアンテナは上がコートの外、下がコートの内側に対応している。", ans:false },
+    ]
+  }
+};
+
+// =============================================
+//  ゲーム状態
+// =============================================
+let state = {
+  screen: 'top',
+  genre: null,
+  player: '',
+  questions: [],
+  qIndex: 0,
+  score: 0,
+  timeLeft: 120,
+  timer: null,
+  answered: false,
+  mistakes: [],
+  correctCount: 0,
+  wrongCount: 0,
+  timeBonus: 0,
+};
+
+// =============================================
+//  初期化
+// =============================================
+function init() {
+  renderGenreGrid();
+}
+
+function renderGenreGrid() {
+  const grid = document.getElementById('genre-grid');
+  grid.innerHTML = '';
+  Object.entries(QUIZ_DATA).forEach(([name, data]) => {
+    const btn = document.createElement('button');
+    btn.className = 'genre-btn';
+    btn.dataset.genre = name;
+    btn.innerHTML = `
+      <span class="genre-icon">${data.icon}</span>
+      ${name}
+      <div class="genre-count">${data.questions.length}問収録</div>
+    `;
+    btn.onclick = () => openModal(name, data.icon, data.questions.length, btn);
+    grid.appendChild(btn);
+  });
+}
+
+function openModal(name, icon, count, btn) {
+  // ジャンルカードをハイライト
+  document.querySelectorAll('.genre-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.genre = name;
+
+  // モーダルの中身を設定
+  document.getElementById('modal-icon').textContent = icon;
+  document.getElementById('modal-name').textContent = name;
+  document.getElementById('modal-count').textContent = `${count}問収録 ／ ランダム10問出題`;
+
+  // 前回の名前を引き継ぎ
+  const savedName = document.getElementById('player-name').value;
+  // 入力フィールドはモーダル内にあるのでそのまま
+
+  document.getElementById('confirm-modal').classList.add('open');
+
+  // 名前入力にフォーカス（少し遅延）
+  setTimeout(() => {
+    const input = document.getElementById('player-name');
+    if (!input.value) input.focus();
+  }, 250);
+}
+
+function closeModal() {
+  document.getElementById('confirm-modal').classList.remove('open');
+}
+
+// モーダル外クリックで閉じる
+document.addEventListener('click', e => {
+  const overlay = document.getElementById('confirm-modal');
+  if (e.target === overlay) closeModal();
+});
+
+// =============================================
+//  ゲーム開始
+// =============================================
+function startGame() {
+  if (!state.genre) { alert('ジャンルを選択してください！'); return; }
+  const name = document.getElementById('player-name').value.trim() || 'ゲスト';
+  state.player = name;
+
+  closeModal();
+
+  const pool = [...QUIZ_DATA[state.genre].questions];
+  shuffle(pool);
+  state.questions = pool.slice(0, 10);
+  state.qIndex = 0;
+  state.score = 0;
+  state.timeLeft = 120;
+  state.mistakes = [];
+  state.correctCount = 0;
+  state.wrongCount = 0;
+  state.answered = false;
+
+  showScreen('screen-quiz');
+  renderQuestion();
+  startTimer();
+}
+
+// =============================================
+//  問題表示
+// =============================================
+function renderQuestion() {
+  const q = state.questions[state.qIndex];
+  document.getElementById('q-num').textContent = state.qIndex + 1;
+  document.getElementById('q-score').textContent = state.score;
+
+  const badge = document.getElementById('q-type-badge');
+  if (q.type === 'mc') {
+    badge.textContent = '4択'; badge.className = 'q-type-badge badge-mc';
+  } else {
+    badge.textContent = '○×'; badge.className = 'q-type-badge badge-tf';
+  }
+
+  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('feedback-area').innerHTML = '';
+  document.getElementById('next-btn').style.display = 'none';
+  state.answered = false;
+
+  const area = document.getElementById('choices-area');
+  area.innerHTML = '';
+
+  if (q.type === 'mc') {
+    const wrap = document.createElement('div');
+    wrap.className = 'choices';
+    q.choices.forEach((c, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.innerHTML = `<span class="choice-label">${['A','B','C','D'][i]}</span>${c}`;
+      btn.onclick = () => answerMC(i, q, wrap);
+      wrap.appendChild(btn);
+    });
+    area.appendChild(wrap);
+  } else {
+    const wrap = document.createElement('div');
+    wrap.className = 'tf-choices';
+    ['maru','batsu'].forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = `tf-btn tf-${t}`;
+      btn.innerHTML = t === 'maru'
+        ? `<span>⭕</span><span class="tf-label">正しい</span>`
+        : `<span>❌</span><span class="tf-label">間違い</span>`;
+      btn.onclick = () => answerTF(t === 'maru', q, wrap);
+      wrap.appendChild(btn);
+    });
+    area.appendChild(wrap);
+  }
+}
+
+function answerMC(idx, q, wrap) {
+  if (state.answered) return;
+  state.answered = true;
+  const btns = wrap.querySelectorAll('.choice-btn');
+  btns.forEach(b => b.disabled = true);
+  const correct = idx === q.ans;
+  btns[idx].classList.add(correct ? 'correct' : 'wrong');
+  if (!correct) btns[q.ans].classList.add('correct');
+  showFeedback(correct, q.choices[q.ans], q);
+}
+
+function answerTF(answer, q, wrap) {
+  if (state.answered) return;
+  state.answered = true;
+  const btns = wrap.querySelectorAll('.tf-btn');
+  btns.forEach(b => b.disabled = true);
+  const correct = answer === q.ans;
+  const idx = answer ? 0 : 1;
+  btns[idx].classList.add(correct ? 'correct' : 'wrong');
+  if (!correct) btns[answer ? 1 : 0].classList.add('correct');
+  const ansLabel = q.ans ? '⭕ 正しい' : '❌ 間違い';
+  showFeedback(correct, ansLabel, q);
+}
+
+function showFeedback(correct, correctLabel, q) {
+  const fb = document.getElementById('feedback-area');
+  if (correct) {
+    state.score += 10;
+    state.timeLeft = Math.min(state.timeLeft + 5, 999);
+    state.correctCount++;
+    fb.innerHTML = `<div class="feedback correct">✅ 正解！ ＋5秒</div>`;
+  } else {
+    state.timeLeft = Math.max(state.timeLeft - 5, 0);
+    state.wrongCount++;
+    state.mistakes.push({ q: q.q, yours: '—', ans: typeof correctLabel === 'string' ? correctLabel : correctLabel });
+    fb.innerHTML = `<div class="feedback wrong">❌ 正解は「${correctLabel}」（−5秒）</div>`;
+  }
+  document.getElementById('q-score').textContent = state.score;
+  document.getElementById('next-btn').style.display = 'block';
+}
+
+function nextQuestion() {
+  state.qIndex++;
+  if (state.qIndex >= state.questions.length) {
+    endGame();
+  } else {
+    renderQuestion();
+  }
+}
+
+// =============================================
+//  タイマー
+// =============================================
+function startTimer() {
+  clearInterval(state.timer);
+  updateTimerUI();
+  state.timer = setInterval(() => {
+    state.timeLeft--;
+    updateTimerUI();
+    if (state.timeLeft <= 0) {
+      clearInterval(state.timer);
+      endGame();
+    }
+  }, 1000);
+}
+
+function updateTimerUI() {
+  const disp = document.getElementById('timer-display');
+  const bar = document.getElementById('timer-bar');
+  disp.textContent = `${state.timeLeft} 秒`;
+  disp.className = 'timer-display' + (state.timeLeft <= 15 ? ' danger' : '');
+  const pct = Math.max(0, Math.min(100, (state.timeLeft / 120) * 100));
+  bar.style.width = pct + '%';
+  if (state.timeLeft <= 15) bar.style.background = 'var(--red)';
+  else if (state.timeLeft <= 30) bar.style.background = 'var(--accent)';
+  else bar.style.background = 'linear-gradient(90deg, var(--green), var(--accent))';
+}
+
+// =============================================
+//  ゲーム終了
+// =============================================
+function endGame() {
+  clearInterval(state.timer);
+  state.timeBonus = state.timeLeft;
+  const total = state.score + state.timeBonus;
+
+  // 結果保存
+  saveScore(state.player, state.genre, total, state.correctCount, state.wrongCount, state.timeBonus);
+
+  // 結果画面
+  const emoji = total >= 100 ? '🏆' : total >= 60 ? '😊' : '😅';
+  document.getElementById('result-emoji').textContent = emoji;
+  document.getElementById('result-score').textContent = total;
+  document.getElementById('res-correct').textContent = state.correctCount;
+  document.getElementById('res-wrong').textContent = state.wrongCount;
+  document.getElementById('res-bonus').textContent = '+' + state.timeBonus;
+
+  const mistakesCard = document.getElementById('mistakes-card');
+  const mistakesList = document.getElementById('mistakes-list');
+  if (state.mistakes.length > 0) {
+    mistakesCard.style.display = 'block';
+    mistakesList.innerHTML = state.mistakes.map((m, i) =>
+      `<div class="mistake-item">
+        <div class="mistake-q">❌ Q${i+1}. ${m.q}</div>
+        <div class="mistake-ans">✅ 正解：${m.ans}</div>
+      </div>`
+    ).join('');
+  } else {
+    mistakesCard.style.display = 'none';
+  }
+
+  showScreen('screen-result');
+}
+
+function restartGame() {
+  showScreen('screen-top');
+}
+
+// =============================================
+//  スコア保存・ランキング
+// =============================================
+function saveScore(player, genre, score, correct, wrong, bonus) {
+  const key = `vb_rank_${genre}`;
+  let ranks = JSON.parse(localStorage.getItem(key) || '[]');
+  ranks.push({ player, score, correct, wrong, bonus, date: new Date().toLocaleDateString('ja-JP') });
+  ranks.sort((a, b) => b.score - a.score);
+  ranks = ranks.slice(0, 10);
+  localStorage.setItem(key, JSON.stringify(ranks));
+}
+
+function renderRanking() {
+  const tabsEl = document.getElementById('ranking-tabs');
+  const contentEl = document.getElementById('ranking-content');
+  tabsEl.innerHTML = '';
+  const genres = Object.keys(QUIZ_DATA);
+
+  function showGenreRank(genre) {
+    tabsEl.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.genre === genre));
+    const key = `vb_rank_${genre}`;
+    const ranks = JSON.parse(localStorage.getItem(key) || '[]');
+    if (ranks.length === 0) {
+      contentEl.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:20px">まだ記録がありません</div>';
+      return;
+    }
+    const medals = ['🥇','🥈','🥉'];
+    contentEl.innerHTML = `
+      <table class="ranking-table">
+        <thead><tr><th>#</th><th>名前</th><th>スコア</th><th>正解</th><th>日付</th></tr></thead>
+        <tbody>
+          ${ranks.map((r, i) => `
+            <tr>
+              <td><span class="rank-medal">${medals[i] || (i+1)}</span></td>
+              <td>${r.player}</td>
+              <td><strong>${r.score}</strong></td>
+              <td>${r.correct}/10</td>
+              <td>${r.date}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  genres.forEach(g => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn';
+    btn.dataset.genre = g;
+    btn.textContent = QUIZ_DATA[g].icon + ' ' + g;
+    btn.onclick = () => showGenreRank(g);
+    tabsEl.appendChild(btn);
+  });
+
+  showGenreRank(genres[0]);
+}
+
+// =============================================
+//  画面管理
+// =============================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'screen-ranking') renderRanking();
+  window.scrollTo(0, 0);
+}
+
+// =============================================
+//  ユーティリティ
+// =============================================
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+// 起動
+init();
+</script>
+</body>
+</html>
