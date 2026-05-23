@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+  <script src="https://pecpec37-gift.github.io/portal/stamp.js"></script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1243,6 +1244,127 @@ function shuffle(arr) {
 
 // 起動
 init();
+</script>
+  <!-- ⭐ スタンプ送信（とみやんのゲームランド） -->
+<script>
+(function() {
+  var GAME_ID = 'volleyball-quiz';
+  // プレーヤー名をポータルから自動セット
+  if (window.TomyStamp) {
+    var saved = TomyStamp.getPlayer();
+    if (saved) {
+      // input[type=text] の最初の要素にプレーヤー名をセット
+      var inputs = document.querySelectorAll('input[type=text], input:not([type])');
+      inputs.forEach(function(el) {
+        var ph = (el.placeholder || '').toLowerCase();
+        if (ph.indexOf('プレーヤー') !== -1 || ph.indexOf('player') !== -1 || ph.indexOf('name') !== -1 || ph.indexOf('名前') !== -1) {
+          if (!el.value) el.value = saved;
+        }
+      });
+    }
+  }
+
+  // 結果表示関数をラップしてスタンプ送信
+  var _origShow = window.showResult || window.showResultScreen || window.displayResult || null;
+  
+  // MutationObserver で結果画面の表示を監視
+  var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(m) {
+      m.addedNodes.forEach(function(node) {
+        if (node.nodeType !== 1) return;
+        // 結果画面の要素を探す
+        var resultEl = node.querySelector ? node.querySelector('[class*="result"],[id*="result"],[class*="Result"],[id*="Result"]') : null;
+        if (!resultEl) return;
+        sendStampFromDOM(node);
+      });
+    });
+    // 表示切り替えによる結果画面も監視
+    mutations.forEach(function(m) {
+      if (m.type === 'attributes' && m.attributeName === 'style') {
+        var el = m.target;
+        var id = (el.id || '').toLowerCase();
+        var cls = (el.className || '').toLowerCase();
+        if ((id.indexOf('result') !== -1 || cls.indexOf('result') !== -1) && el.style.display !== 'none') {
+          sendStampFromDOM(document.body);
+        }
+      }
+    });
+  });
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+
+  function sendStampFromDOM(root) {
+    if (!window.TomyStamp) return;
+    // 正解数を画面から読み取る
+    var correctCount = 0;
+    var genreName = '';
+    
+    // 正解数の要素を探す（よくあるパターン）
+    var selectors = [
+      '[id*="correct"],[class*="correct"]',
+      '[id*="seikai"],[class*="seikai"]',
+      '[id*="score"],[class*="score"]'
+    ];
+    for (var i = 0; i < selectors.length; i++) {
+      var el = root.querySelector(selectors[i]);
+      if (el) {
+        var num = parseInt(el.textContent);
+        if (!isNaN(num) && num > 0 && num <= 10) {
+          correctCount = num;
+          break;
+        }
+      }
+    }
+    
+    // グローバル変数からも取得を試みる
+    var globalVars = ['correctCount','correctNum','seikaiCount','correct','seikai'];
+    for (var j = 0; j < globalVars.length; j++) {
+      if (typeof window[globalVars[j]] === 'number') {
+        correctCount = window[globalVars[j]];
+        break;
+      }
+    }
+    
+    // ジャンル名を取得
+    var genreVars = ['currentGenre','selectedGenre','genreName','genre','currentCategory'];
+    for (var k = 0; k < genreVars.length; k++) {
+      if (typeof window[genreVars[k]] === 'string' && window[genreVars[k]]) {
+        genreName = window[genreVars[k]];
+        break;
+      }
+    }
+    if (!genreName) genreName = 'default';
+    
+    // プレーヤー名
+    var player = TomyStamp.getPlayer();
+    if (!player) {
+      // 画面上のinputから取得
+      document.querySelectorAll('input[type=text], input:not([type])').forEach(function(el) {
+        var ph = (el.placeholder || '').toLowerCase();
+        if (ph.indexOf('プレーヤー') !== -1 || ph.indexOf('player') !== -1) {
+          if (el.value) player = el.value;
+        }
+      });
+    }
+    if (player) TomyStamp.setPlayer(player);
+    
+    if (correctCount >= 9) {
+      TomyStamp.send(GAME_ID, genreName, correctCount)
+        .then(function(r) { if(r.ok) console.log('[⭐ stamp] 獲得! game=' + GAME_ID + ' genre=' + genreName + ' correct=' + correctCount); });
+    }
+  }
+
+  // showResult 系の関数を上書き（確実な送信）
+  ['showResult','showResultScreen','displayResult','showResultPage','endGame','finishGame','showFinalResult'].forEach(function(fn) {
+    if (typeof window[fn] === 'function') {
+      var orig = window[fn];
+      window[fn] = function() {
+        var ret = orig.apply(this, arguments);
+        setTimeout(function() { sendStampFromDOM(document.body); }, 200);
+        return ret;
+      };
+    }
+  });
+})();
 </script>
 </body>
 </html>
