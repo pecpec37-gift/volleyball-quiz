@@ -562,6 +562,7 @@
     gap: 4px;
   }
 </style>
+<script src="https://pecpec37-gift.github.io/portal/stamp.js"></script>
 </head>
 <body>
 <div class="container">
@@ -1243,6 +1244,73 @@ function shuffle(arr) {
 
 // 起動
 init();
+</script>
+<!-- ⭐ スタンプ送信（とみやんのゲームランド） -->
+<script>
+(function() {
+  var GAME_ID = 'volleyball-quiz';
+
+  window.addEventListener('load', function() {
+
+    // ---- プレーヤー名の自動セット ----
+    var _origShowScreen = window.showScreen;
+    if (typeof _origShowScreen === 'function') {
+      window.showScreen = function(id) {
+        _origShowScreen(id);
+        if (id === 'screen-name') {
+          setTimeout(function() {
+            var inp = document.querySelector('#screen-name input[type=text], #screen-name input:not([type])');
+            if (inp && window.TomyStamp) {
+              var saved = TomyStamp.getPlayer();
+              if (saved && !inp.value) inp.value = saved;
+            }
+          }, 80);
+        }
+      };
+    }
+
+    // ---- スタンプ送信：endGame をフック ----
+    var _origEndGame = window.endGame;
+    if (typeof _origEndGame === 'function') {
+      window.endGame = function() {
+        var ret = _origEndGame.apply(this, arguments);
+        setTimeout(sendStamp, 500);
+        return ret;
+      };
+    }
+  });
+
+  function sendStamp() {
+    if (!window.TomyStamp) return;
+
+    // プレーヤー名：state.player
+    var player = (typeof state !== 'undefined' && state.player)
+      ? state.player : TomyStamp.getPlayer();
+    if (player) TomyStamp.setPlayer(player);
+    if (!player) return;
+
+    // 正解数：state.correctCount
+    var correctNum = (typeof state !== 'undefined') ? (state.correctCount || 0) : 0;
+
+    // ジャンル名：state.genre
+    var genreName = (typeof state !== 'undefined' && state.genre) ? state.genre : 'default';
+
+    console.log('[stamp] player=' + player + ' correct=' + correctNum + ' genre=' + genreName);
+
+    if (correctNum >= 9) {
+      TomyStamp.send(GAME_ID, genreName, correctNum).then(function(r) {
+        if (r.ok) {
+          console.log('[⭐ stamp] 獲得! genre=' + genreName);
+          var toast = document.createElement('div');
+          toast.textContent = '⭐ スタンプ獲得！ランキングに反映されます';
+          toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#f0d060;padding:10px 20px;border-radius:4px;font-size:13px;z-index:9999;border:1px solid rgba(240,208,96,0.4);white-space:nowrap;';
+          document.body.appendChild(toast);
+          setTimeout(function() { document.body.removeChild(toast); }, 3000);
+        }
+      });
+    }
+  }
+})();
 </script>
 </body>
 </html>
