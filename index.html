@@ -135,6 +135,16 @@
   .genre-btn .genre-icon { font-size: 22px; display: block; margin-bottom: 6px; }
   .genre-btn .genre-count { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
 
+  /* ── お任せ出題（全ジャンルミックス） ── */
+  .genre-btn.random {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, rgba(59,130,246,0.14), rgba(245,166,35,0.14));
+    border-color: rgba(59,130,246,0.55);
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .genre-btn.random .genre-count { color: var(--text-dim); }
+
   /* ── 入力 ── */
   .input-group { margin-bottom: 16px; }
   .input-group label {
@@ -577,9 +587,9 @@
 
   <div class="card rules">
     <h3>📋 ルール</h3>
-    制限時間：120秒 ／ 各ジャンル10問ランダム出題<br>
+    制限時間：30秒 ／ 各ジャンル10問ランダム出題<br>
     ✅ 正解 → <span class="plus">+10点</span> ＋ 時間+5秒<br>
-    ❌ 不正解 → 減点なし ＋ 時間−5秒のペナルティ<br>
+    ❌ 不正解 → 減点なし ＋ <span class="minus">時間−2秒</span>のペナルティ<br>
     🏆 残り時間がそのままボーナス点に加算！<br>
     【4択】と【○×】がランダムにミックスされます
   </div>
@@ -634,7 +644,7 @@
     <div class="q-score"><span id="q-score">0</span> pt</div>
   </div>
 
-  <div class="timer-display" id="timer-display">120 秒</div>
+  <div class="timer-display" id="timer-display">30 秒</div>
   <div class="timer-bar-wrap">
     <div class="timer-bar" id="timer-bar" style="width:100%"></div>
   </div>
@@ -897,6 +907,10 @@ const QUIZ_DATA = {
 // =============================================
 //  ゲーム状態
 // =============================================
+const RANDOM_GENRE = 'お任せ出題';
+const TIME_LIMIT = 30;   // 制限時間（秒）
+const PENALTY_SEC = 2;   // 不正解ペナルティ（秒）
+
 let state = {
   screen: 'top',
   genre: null,
@@ -904,7 +918,7 @@ let state = {
   questions: [],
   qIndex: 0,
   score: 0,
-  timeLeft: 120,
+  timeLeft: TIME_LIMIT,
   timer: null,
   answered: false,
   mistakes: [],
@@ -923,6 +937,20 @@ function init() {
 function renderGenreGrid() {
   const grid = document.getElementById('genre-grid');
   grid.innerHTML = '';
+
+  // ── お任せ出題（全ジャンルからランダム10問） ──
+  const totalQ = Object.values(QUIZ_DATA).reduce((s, d) => s + d.questions.length, 0);
+  const randomBtn = document.createElement('button');
+  randomBtn.className = 'genre-btn random';
+  randomBtn.dataset.genre = RANDOM_GENRE;
+  randomBtn.innerHTML = `
+    <span class="genre-icon">🎲</span>
+    ${RANDOM_GENRE}
+    <div class="genre-count">全ジャンル ${totalQ}問からランダム10問</div>
+  `;
+  randomBtn.onclick = () => openModal(RANDOM_GENRE, '🎲', totalQ, randomBtn);
+  grid.appendChild(randomBtn);
+
   Object.entries(QUIZ_DATA).forEach(([name, data]) => {
     const btn = document.createElement('button');
     btn.className = 'genre-btn';
@@ -946,7 +974,9 @@ function openModal(name, icon, count, btn) {
   // モーダルの中身を設定
   document.getElementById('modal-icon').textContent = icon;
   document.getElementById('modal-name').textContent = name;
-  document.getElementById('modal-count').textContent = `${count}問収録 ／ ランダム10問出題`;
+  document.getElementById('modal-count').textContent = (name === RANDOM_GENRE)
+    ? `全ジャンル ${count}問から ランダム10問出題`
+    : `${count}問収録 ／ ランダム10問出題`;
 
   // 前回の名前を引き継ぎ
   const savedName = document.getElementById('player-name').value;
@@ -981,12 +1011,14 @@ function startGame() {
 
   closeModal();
 
-  const pool = [...QUIZ_DATA[state.genre].questions];
+  const pool = (state.genre === RANDOM_GENRE)
+    ? Object.values(QUIZ_DATA).flatMap(d => d.questions)
+    : [...QUIZ_DATA[state.genre].questions];
   shuffle(pool);
   state.questions = pool.slice(0, 10);
   state.qIndex = 0;
   state.score = 0;
-  state.timeLeft = 120;
+  state.timeLeft = TIME_LIMIT;
   state.mistakes = [];
   state.correctCount = 0;
   state.wrongCount = 0;
@@ -1079,10 +1111,10 @@ function showFeedback(correct, correctLabel, q) {
     state.correctCount++;
     fb.innerHTML = `<div class="feedback correct">✅ 正解！ ＋5秒</div>`;
   } else {
-    state.timeLeft = Math.max(state.timeLeft - 5, 0);
+    state.timeLeft = Math.max(state.timeLeft - PENALTY_SEC, 0);
     state.wrongCount++;
     state.mistakes.push({ q: q.q, yours: '—', ans: typeof correctLabel === 'string' ? correctLabel : correctLabel });
-    fb.innerHTML = `<div class="feedback wrong">❌ 正解は「${correctLabel}」（−5秒）</div>`;
+    fb.innerHTML = `<div class="feedback wrong">❌不正解　−${PENALTY_SEC}秒<div style="font-size:13px;font-weight:400;margin-top:6px;opacity:.85">正解は「${correctLabel}」</div></div>`;
   }
   document.getElementById('q-score').textContent = state.score;
   document.getElementById('next-btn').style.display = 'block';
@@ -1117,11 +1149,11 @@ function updateTimerUI() {
   const disp = document.getElementById('timer-display');
   const bar = document.getElementById('timer-bar');
   disp.textContent = `${state.timeLeft} 秒`;
-  disp.className = 'timer-display' + (state.timeLeft <= 15 ? ' danger' : '');
-  const pct = Math.max(0, Math.min(100, (state.timeLeft / 120) * 100));
+  disp.className = 'timer-display' + (state.timeLeft <= 5 ? ' danger' : '');
+  const pct = Math.max(0, Math.min(100, (state.timeLeft / TIME_LIMIT) * 100));
   bar.style.width = pct + '%';
-  if (state.timeLeft <= 15) bar.style.background = 'var(--red)';
-  else if (state.timeLeft <= 30) bar.style.background = 'var(--accent)';
+  if (state.timeLeft <= 5) bar.style.background = 'var(--red)';
+  else if (state.timeLeft <= 10) bar.style.background = 'var(--accent)';
   else bar.style.background = 'linear-gradient(90deg, var(--green), var(--accent))';
 }
 
@@ -1181,7 +1213,7 @@ function renderRanking() {
   const tabsEl = document.getElementById('ranking-tabs');
   const contentEl = document.getElementById('ranking-content');
   tabsEl.innerHTML = '';
-  const genres = Object.keys(QUIZ_DATA);
+  const genres = [RANDOM_GENRE, ...Object.keys(QUIZ_DATA)];
 
   function showGenreRank(genre) {
     tabsEl.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.genre === genre));
