@@ -656,6 +656,10 @@
     <div id="feedback-area"></div>
     <button class="next-btn" id="next-btn" style="display:none" onclick="nextQuestion()">次の問題へ →</button>
   </div>
+
+  <div class="btn-row" style="margin-top:4px">
+    <button class="btn btn-secondary" onclick="quitGame()">やめる</button>
+  </div>
 </div>
 
 <!-- ===== RESULT ===== -->
@@ -1104,6 +1108,7 @@ function answerTF(answer, q, wrap) {
 }
 
 function showFeedback(correct, correctLabel, q) {
+  clearInterval(state.timer);              // 回答後はタイマーを一時停止（次の問題へ を押すまで消費しない）
   const fb = document.getElementById('feedback-area');
   if (correct) {
     state.score += 10;
@@ -1117,6 +1122,7 @@ function showFeedback(correct, correctLabel, q) {
     fb.innerHTML = `<div class="feedback wrong">❌不正解　−${PENALTY_SEC}秒<div style="font-size:13px;font-weight:400;margin-top:6px;opacity:.85">正解は「${correctLabel}」</div></div>`;
   }
   document.getElementById('q-score').textContent = state.score;
+  updateTimerUI();                          // ボーナス/ペナルティ後の残り時間を表示に反映
   document.getElementById('next-btn').style.display = 'block';
 }
 
@@ -1126,6 +1132,14 @@ function nextQuestion() {
     endGame();
   } else {
     renderQuestion();
+    startTimer();                           // 次の問題からタイマー再開
+  }
+}
+
+function quitGame() {
+  if (confirm('クイズをやめてトップに戻りますか？（今回の記録は保存されません）')) {
+    clearInterval(state.timer);
+    showScreen('screen-top');
   }
 }
 
@@ -1246,7 +1260,8 @@ function renderRanking() {
     const btn = document.createElement('button');
     btn.className = 'tab-btn';
     btn.dataset.genre = g;
-    btn.textContent = QUIZ_DATA[g].icon + ' ' + g;
+    const gIcon = (g === RANDOM_GENRE) ? '🎲' : QUIZ_DATA[g].icon;
+    btn.textContent = gIcon + ' ' + g;
     btn.onclick = () => showGenreRank(g);
     tabsEl.appendChild(btn);
   });
